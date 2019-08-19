@@ -12,70 +12,76 @@ def my_round(x, d=0):
 
 
 class ac_get:
+    CurrentTemperature = 26
+
     def __init__(self, file):
         self.status = {
-            'CurrentTemperature': 30,
+            "CurrentTemperature": self.CurrentTemperature,
             # Minimum Value 0
             # Maximum Value 100
             # Step Value 0.1
 
-            'SwingMode': 0,
+            "SwingMode": 0,
             # 0 - "Swing disabled"
             # 1 - "Swing enabled"
 
-            'RotationSpeed': 2,
+            "RotationSpeed": 2,
             # Minimum Value: 0
             # Maximum Value: 100
             # Step Value: 1
             # Unit: percentage
 
-            'TargetHeaterCoolerState': 2,
+            "TargetHeaterCoolerState": 2,
             # Valid Values
             # 0 - AUTO
             # 1 - HEAT
             # 2 - COOL
 
-            'LockPhysicalControls': 0,
+            "LockPhysicalControls": 0,
             # 0 - "Control lock disabled"
             # 1 - "Control lock enabled"
 
-            'HeatingThresholdTemperature': 25,
+            "HeatingThresholdTemperature": 25,
             # Minimum Value: 0
             # Maximum Value: 25
             # Step Value: 0.1
             # Unit: celcius
 
-            'CurrentHeaterCoolerState': 3,
+            "CurrentHeaterCoolerState": 3,
             # 0 - INACTIVE
             # 1 - IDLE
             # 2 - HEATING
             # 3 - COOLING
 
-            'CoolingThresholdTemperature': 26,
+            "CoolingThresholdTemperature": 26,
             # Minimum Value: 10
             # Maximum Value: 35
             # Step Value: 0.1
             # Unit: celcius
 
-            'Active': 1,
+            "Active": 0,
             # 0 - "Inactive"
             # 1 - "Active"
 
-            'TemperatureDisplayUnits': 0  # 0 - Celcius
+            "TemperatureDisplayUnits": 0  # 0 - Celcius
         }
 
-        contents = file.read()
-        if contents == '':
-            self.Save(file)
+        self.contents = file.read()
+
+        if self.contents == '':
+            pass
+
         else:
             self.ConvertFromJson(file)
 
     def ConvertFromJson(self, file):
-        self.status = json.load(file)
+        self.status = json.loads(self.contents)
 
     def Save(self, file):
-        json.dump(self.status, file, ensure_ascii=False, indent=4,
-                  sort_keys=True, separators=(',', ': '))
+        print(self.status)
+        file.seek(0)
+        file.write('')
+        json.dump(self.status, file, ensure_ascii=False, indent=4)
 
     def getValue(self, args):
         try:
@@ -87,21 +93,39 @@ class ac_get:
 class cool_set(ac_get):
     def __init__(self, file):
         super(cool_set, self).__init__(file)
-        self.__STATUS = 'cool'
+        self.__STATUS = 'Cool'
 
     def SetValue(self, arg3, arg4):
-        if arg3 == 'CoolingThresholdTemperature':
+        if arg3 == '{}ingThresholdTemperature'.format(self.__STATUS):
             self.ChangeTenperature(arg4)
+        elif arg3 == 'Active':
+            self.ChangeActive(arg4)
 
     def ChangeTenperature(self, temp):
         rounded = my_round(float(temp))
-        cmd = 'python3 ~/pigpio/irrp2.py -p -g17 -f ~/pigpio/aircon_{0} ac:{0}_{1}'.format(self.__STATUS,
-                                                                                           rounded)
+        cmd = 'python3 ~/pigpio/irrp2.py -p -g17 -f ~/pigpio/aircon_{0} ac:{1}'.format(self.__STATUS,
+                                                                                       rounded)
         res = subprocess.run(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # print(f'{i},{res.stdout.decode("utf8")}')
-        self.status['CoolingThresholdTemperature'] = rounded
+        self.status['{}ingThresholdTemperature'.format(
+            self.__STATUS)] = rounded
+        self.CurrentTemperature = rounded
         print(rounded)
+        self.Save(file)
+
+    def ChangeActive(self, value):
+        if value == '0':
+            onoff = 'off'
+        else:
+            onoff = 'on'
+
+        cmd = 'python3 ~/pigpio/irrp2.py -p -g17 -f ~/pigpio/aircon_{0} ac:{1}'.format(self.__STATUS,
+                                                                                       onoff)
+        res = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.status['Active'] = value
+        print(value)
         self.Save(file)
 
 
@@ -109,13 +133,18 @@ if __name__ == "__main__":
     with open('./test.txt', 'r+') as file:
         f = open('./test.txt', "a")
 
-        for i in sys.argv:
-            text = i + ' '
-            f.write(text)
+    for i in sys.argv:
+        text = i + ' '
+        f.write(text)
 
-        f.write('\n')
+    f.write('\n')
 
-    with open('/tmp/acVariableHolder', 'w+') as file:
+    if os.path.exists('/tmp/acVariableHolder') == False:
+        cmd = 'touch /tmp/acVariableHolder'
+        res = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    with open('/tmp/acVariableHolder', 'r+') as file:
         # with open('./acVariableHolder', 'w+') as file:
 
         # if len(sys.argv) != 5:
@@ -124,7 +153,7 @@ if __name__ == "__main__":
         if sys.argv[1] == 'Get':
             get = ac_get(file)
             print(get.getValue(sys.argv[3]))
-            get.Save(file)
+            # get.Save(file)
             sys.exit(0)
 
         if sys.argv[1] == 'Set':
