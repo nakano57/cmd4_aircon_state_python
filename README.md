@@ -1,1 +1,3 @@
-https://github.com/ztalbot2000/homebridge-cmd4#readme
+# 書いた
+
+https://qiita.com/hiro2do/items/ff336cb70eb2b1cb1e6b
