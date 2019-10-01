@@ -1,0 +1,21 @@
+...
+
+        {
+  "type": "HeaterCooler",
+  "displayName": "RAS-AJ22G",
+  "active": "ACTIVE",
+  "currentHeaterCoolerState": "COOLING",
+  "targetHeaterCoolerState": "AUTO",
+  "currentTemperature": 26.0,
+  "lockPhysicalControls": "CONTROL_LOCK_DISABLED",
+  "name": "My_HeaterCooler",
+  "swingMode": "SWING_ENABLED",
+  "coolingThresholdTemperature": 32.4,
+  "heatingThresholdTemperature": 25.2,
+  "temperatureDisplayUnits": "CELSIUS",
+  "rotationSpeed": 100,
+  "stateChangeResponseTime": 3,
+  "state_cmd": "python3 .homebridge/Cmd4Scripts/aircon.py"
+},
+
+...
